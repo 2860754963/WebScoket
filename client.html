@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>websocket测试</title>
+  </head>
+  <body>
+    <button onclick="sendMessage()">发消息给服务器</button>
+    <div id="res"></div>
+  </body>
+</html>
+
+<script type="text/javascript">
+  /**
+   *ws.readyState
+   *CONNECTING：值为0，表示正在连接。
+   *PEN：值为1，表示连接成功，可以通信了。
+   *LOSING：值为2，表示连接正在关闭。
+   *CLOSED：值为3，表示连接已经关闭，或者打开连接失败。
+   **/
+  const ws = new WebSocket('ws://127.0.0.1:9527/')
+  ws.onopen = function (event) {
+    document.getElementById('res').innerHTML = 'websocket已连接!'
+    console.log('websocket已连接!')
+    heartCheck.start()
+  }
+  ws.onmessage = function (event) {
+    heartCheck.reset()
+    console.log('收到服务端回复的消息：' + event.data)
+  }
+  ws.onclose = function (event) {
+    console.log('websocket已关闭')
+    document.getElementById('res').innerHTML = 'websocket已关闭！'
+  }
+  ws.onerror = function (event) {
+    console.log('websocket发生错误')
+  }
+  // 心跳检测
+  let heartCheck = {
+    timeout: 2000,
+    timeoutObj: null,
+    serverTimeoutObj: null,
+    reset: function () {
+      clearTimeout(this.timeoutObj)
+      clearTimeout(this.serverTimeoutObj)
+      this.start()
+    },
+    start: function () {
+      console.log('ping,心跳检测中....')
+      let self = this
+      this.timeoutObj = setTimeout(function () {
+        ws.send('ping')
+        self.serverTimeoutObj = setTimeout(function () {
+          ws.close()
+        }, self.timeout)
+      }, this.timeout)
+    },
+  }
+
+  function sendMessage() {
+    ws.send('这是客户端发送给服务端的消息内容')
+  }
+  function isEmptyObject(obj) {
+    return typeof obj === 'object' && Object.keys(obj).length === 0
+  }
+</script>
